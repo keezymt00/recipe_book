@@ -800,3 +800,12 @@ body.sheet-open { overflow: hidden; }
 .update-banner .icon { color: var(--tint); }
 body.cooking .update-banner { display: none; } /* im Kochmodus nicht stören */
 @keyframes drop { from { transform: translate(-50%, -30px); opacity: 0; } }
+
+/* ---------- Backup-Einrichtung ---------- */
+.setup-step { align-items: flex-start; }
+.setup-step strong { font-weight: 600; }
+.setup-step .row-sub { font-size: 14px; line-height: 1.45; margin-top: 3px; }
+.setup-step .row-sub strong { color: var(--label); font-weight: 600; }
+.field-row.wide input { width: auto; flex: 2; min-width: 0; text-align: right; }
+.tool-btn.tinted { color: var(--tint); }
+.tool-btn.tinted .icon svg { width: 21px; height: 21px; }

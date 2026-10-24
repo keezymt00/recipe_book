@@ -15,6 +15,11 @@ import * as shopping from './views/shopping.js';
 import * as pantry from './views/pantry.js';
 import { openCount, seedPantry } from './shopping.js';
 import { initUpdateCheck } from './update.js';
+import { initCloud } from './cloud.js';
+import { cleanupTrash, dailySnapshot } from './safety.js';
+import * as cloudBackup from './views/cloudBackup.js';
+import * as trashView from './views/trash.js';
+import * as snapshotsView from './views/snapshots.js';
 
 /* ---------- Routen (Hash-basiert, funktioniert ohne Server-Konfiguration) ---------- */
 
@@ -29,6 +34,9 @@ const ROUTES = [
   { re: /^\/einkauf$/, view: shopping.render, tab: 'einkauf' },
   { re: /^\/mehr$/, view: more.render, tab: 'mehr' },
   { re: /^\/vorrat$/, view: pantry.render, tab: 'mehr' },
+  { re: /^\/backup$/, view: cloudBackup.render, tab: 'mehr' },
+  { re: /^\/papierkorb$/, view: trashView.render, tab: 'mehr' },
+  { re: /^\/sicherungen$/, view: snapshotsView.render, tab: 'mehr' },
 ];
 
 const viewEl = document.getElementById('view');
@@ -118,6 +126,11 @@ async function init() {
     await setMeta('pantrySeeded', true);
   }
 
+  // Sicherheitsnetz: abgelaufene Papierkorb-Einträge entfernen, täglicher Sicherungspunkt
+  // (Fehler hier dürfen den Start nie verhindern)
+  cleanupTrash().catch(console.error);
+  dailySnapshot().catch(console.error);
+
   // Browser bitten, die Daten nicht automatisch zu löschen
   navigator.storage?.persist?.().catch(() => {});
 
@@ -128,6 +141,7 @@ async function init() {
     navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service Worker:', err));
   }
   initUpdateCheck();
+  initCloud();
 }
 
 window.addEventListener('unhandledrejection', (e) => {

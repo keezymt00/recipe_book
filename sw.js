@@ -8,7 +8,7 @@
 //  - Offline oder Netz langsamer als 3 s (Supermarkt!): sofort aus dem Cache.
 // Bei neuen Dateien VERSION erhöhen und die Liste ASSETS ergänzen.
 
-const VERSION = 'v6';
+const VERSION = 'v7';
 const CACHE = `kochbuch-${VERSION}`;
 
 // App-Hülle, die beim Installieren vorab gecacht wird (relative Pfade → funktioniert auch unter /repo-name/)
@@ -28,6 +28,8 @@ const ASSETS = [
   'js/parser.js',
   'js/seed.js',
   'js/backup.js',
+  'js/cloud.js',
+  'js/safety.js',
   'js/plan.js',
   'js/shopping.js',
   'js/views/list.js',
@@ -40,6 +42,9 @@ const ASSETS = [
   'js/views/shopping.js',
   'js/views/sheets.js',
   'js/views/pantry.js',
+  'js/views/cloudBackup.js',
+  'js/views/trash.js',
+  'js/views/snapshots.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/apple-touch-icon.png',

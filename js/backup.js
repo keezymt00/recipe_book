@@ -1,14 +1,16 @@
-// backup.js – alle Daten als JSON-Datei exportieren und wieder importieren
-// (Wichtig auf iOS: Safari kann Website-Daten bei Speicherknappheit löschen.)
+// backup.js – Daten sammeln, prüfen und zurückschreiben.
+// Gemeinsame Grundlage für: Export/Import als Datei, Cloud-Backup (cloud.js) und
+// Sicherungspunkte (safety.js). Alles, was zurückgeschrieben wird, läuft durch dieselbe
+// strenge Prüfung – egal ob aus einer Datei, aus GitHub oder aus einem Sicherungspunkt.
 
-import { getAll, putMany, clear, getMeta, setMeta, normalizeRecipe } from './db.js';
+import { getAll, put, del, putMany, clear, getMeta, setMeta, normalizeRecipe, markChanged } from './db.js';
 import { AISLES } from './aisles.js';
 
-const FORMAT = 'kochbuch';
-const FORMAT_VERSION = 1;
+export const FORMAT = 'kochbuch';
+export const FORMAT_VERSION = 1;
 const STORES = ['plan', 'shopping', 'pantry'];
 
-function blobToDataURL(blob) {
+export function blobToDataURL(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
@@ -24,12 +26,22 @@ function dataURLToBlob(dataURL) {
   return new Blob([bytes], { type });
 }
 
-/** Erstellt die Backup-Datei (Fotos als Base64 eingebettet) */
-export async function createBackupFile() {
-  const recipes = await getAll('recipes');
-  const data = { recipes: await Promise.all(recipes.map(async (r) => ({ ...r, photo: r.photo ? await blobToDataURL(r.photo) : null }))) };
+/**
+ * Alle Daten einsammeln. photo(blob, recipe) bestimmt, was im Feld "photo" landet:
+ * Data-URL (Datei-Export), Pfad im Repo (Cloud) oder null (Sicherungspunkt).
+ */
+export async function collectData(photo = () => null) {
+  const recipes = (await getAll('recipes')).sort((a, b) => a.id.localeCompare(b.id));
+  const data = { recipes: [] };
+  for (const r of recipes) data.recipes.push({ ...r, photo: r.photo ? await photo(r.photo, r) : null });
   for (const store of STORES) data[store] = await getAll(store);
   data.aisleOverrides = await getMeta('aisleOverrides', {});
+  return data;
+}
+
+/** Erstellt die Backup-Datei (Fotos als Base64 eingebettet) */
+export async function createBackupFile() {
+  const data = await collectData((blob) => blobToDataURL(blob));
 
   const json = JSON.stringify({ app: FORMAT, version: FORMAT_VERSION, exportedAt: new Date().toISOString(), data });
   const date = new Date().toISOString().slice(0, 10);
@@ -161,11 +173,66 @@ function cleanOverrides(o) {
   return out;
 }
 
+/** Rohdaten (aus Datei, Cloud oder Sicherungspunkt) prüfen und bereinigen */
+export function cleanData(data) {
+  if (!isObj(data)) throw new Error('Die Sicherung enthält keine Daten.');
+  const raw = list(data.recipes, 5000);
+  const recipes = raw.map(cleanRecipe).filter(Boolean);
+  return {
+    recipes,
+    skipped: Array.isArray(data.recipes) ? data.recipes.length - recipes.length : 0,
+    plan: list(data.plan, 1000).map(cleanDay).filter(Boolean),
+    shopping: list(data.shopping, 5000).map(cleanShopping).filter(Boolean),
+    pantry: list(data.pantry, 2000).map(cleanPantry).filter(Boolean),
+    aisleOverrides: cleanOverrides(data.aisleOverrides),
+  };
+}
+
 /**
- * Backup einlesen. mode: 'merge' (gleiche IDs werden überschrieben, Rest bleibt)
- *                   oder 'replace' (vorher alles löschen).
- * Liefert { imported, skipped } für die Rezepte.
+ * Geprüfte Daten zurückschreiben. mode: 'merge' (gleiche IDs überschreiben, Rest bleibt)
+ * oder 'replace' (vorher alles löschen).
+ * Dabei geht nie etwas endgültig verloren:
+ *  - Hat ein Rezept in der Sicherung kein Foto, auf dem Gerät (oder im Papierkorb) aber schon,
+ *    wird das vorhandene Foto übernommen.
+ *  - Bei 'replace' wandern Rezepte, die in der Sicherung fehlen, in den Papierkorb (mit Foto)
+ *    statt gelöscht zu werden – so lässt sich auch ein versehentliches "Alles ersetzen"
+ *    über einen Sicherungspunkt vollständig rückgängig machen.
  */
+export async function applyData(clean, mode = 'merge') {
+  const current = await getAll('recipes');
+  const photos = new Map();
+  for (const t of await getAll('trash')) if (t.recipe?.photo) photos.set(t.id, t.recipe.photo);
+  for (const r of current) if (r.photo) photos.set(r.id, r.photo);
+  for (const r of clean.recipes) if (!r.photo && photos.has(r.id)) r.photo = photos.get(r.id);
+
+  if (mode === 'replace') {
+    const incoming = new Set(clean.recipes.map((r) => r.id));
+    const now = Date.now();
+    for (const r of current) if (!incoming.has(r.id)) await put('trash', { id: r.id, recipe: r, deletedAt: now });
+    await clear('recipes');
+    for (const store of STORES) await clear(store);
+  }
+  await putMany('recipes', clean.recipes);
+  // Wieder vorhandene Rezepte aus dem Papierkorb nehmen
+  for (const r of clean.recipes) await del('trash', r.id);
+  for (const store of STORES) await putMany(store, clean[store]);
+  const overrides = mode === 'replace' ? {} : await getMeta('aisleOverrides', {});
+  await setMeta('aisleOverrides', { ...overrides, ...clean.aisleOverrides });
+  await markChanged();
+  return { imported: clean.recipes.length, skipped: clean.skipped };
+}
+
+/** Komplettes Backup-Objekt ({ app, version, data }) prüfen und einspielen */
+export async function importObject(parsed, mode = 'merge') {
+  if (!isObj(parsed) || parsed.app !== FORMAT || !isObj(parsed.data)) throw new Error('Das ist keine Kochbuch-Sicherung.');
+  if (typeof parsed.version !== 'number' || parsed.version > FORMAT_VERSION) {
+    throw new Error('Diese Sicherung stammt aus einer neueren App-Version.');
+  }
+  // Erst prüfen, dann verändern – bei einem Fehler bleibt alles, wie es war
+  return applyData(cleanData(parsed.data), mode);
+}
+
+/** Backup-Datei einlesen. Liefert { imported, skipped }. */
 export async function importBackup(file, mode = 'merge') {
   if (file.size > MAX_FILE_BYTES) throw new Error('Die Datei ist zu groß (max. 100 MB).');
   let parsed;
@@ -174,29 +241,5 @@ export async function importBackup(file, mode = 'merge') {
   } catch {
     throw new Error('Die Datei ist kein gültiges JSON.');
   }
-  if (!isObj(parsed) || parsed.app !== FORMAT || !isObj(parsed.data)) throw new Error('Das ist keine Kochbuch-Sicherung.');
-  if (typeof parsed.version !== 'number' || parsed.version > FORMAT_VERSION) {
-    throw new Error('Diese Sicherung stammt aus einer neueren App-Version.');
-  }
-
-  const raw = list(parsed.data.recipes, 5000);
-  const recipes = raw.map(cleanRecipe).filter(Boolean);
-  const cleaned = {
-    plan: list(parsed.data.plan, 1000).map(cleanDay).filter(Boolean),
-    shopping: list(parsed.data.shopping, 5000).map(cleanShopping).filter(Boolean),
-    pantry: list(parsed.data.pantry, 2000).map(cleanPantry).filter(Boolean),
-  };
-
-  // Erst nach erfolgreicher Prüfung etwas verändern
-  if (mode === 'replace') {
-    await clear('recipes');
-    for (const store of STORES) await clear(store);
-  }
-  await putMany('recipes', recipes);
-  for (const store of STORES) await putMany(store, cleaned[store]);
-  const overrides = cleanOverrides(parsed.data.aisleOverrides);
-  const current = mode === 'replace' ? {} : await getMeta('aisleOverrides', {});
-  await setMeta('aisleOverrides', { ...current, ...overrides });
-
-  return { imported: recipes.length, skipped: Array.isArray(parsed.data.recipes) ? parsed.data.recipes.length - recipes.length : 0 };
+  return importObject(parsed, mode);
 }

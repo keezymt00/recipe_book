@@ -1,7 +1,8 @@
 // views/form.js – Rezept anlegen / bearbeiten (auch vorbefüllt aus dem Import)
 // Aufbau wie ein iOS-Einstellungsformular: gruppierte Zeilen, rote/grüne Kreise zum Entfernen/Hinzufügen.
 
-import { get, getAll, del, saveRecipe, uid, normalizeRecipe } from '../db.js';
+import { get, getAll, saveRecipe, uid, normalizeRecipe } from '../db.js';
+import { trashRecipe } from '../safety.js';
 import { UNITS, normalizeUnit, parseAmount, formatAmountInput } from '../units.js';
 import { guessAisle } from '../aisles.js';
 import { parseIngredientLine } from '../parser.js';
@@ -205,9 +206,9 @@ export async function render(root, [id]) {
   }
 
   async function remove() {
-    if (!(await confirmDialog(`„${r.title}“ wird endgültig gelöscht.`, 'Rezept löschen', true))) return;
-    await del('recipes', r.id);
-    toast('Rezept gelöscht');
+    if (!(await confirmDialog(`„${r.title}“ löschen? Es bleibt 30 Tage im Papierkorb (Mehr → Papierkorb).`, 'Rezept löschen', true))) return;
+    await trashRecipe(r.id);
+    toast('In den Papierkorb verschoben');
     location.replace('#/');
   }
 

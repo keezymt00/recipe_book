@@ -3,7 +3,9 @@
 import { guessAisle } from './aisles.js';
 
 const DB_NAME = 'kochbuch';
-const DB_VERSION = 1;
+// Version 2: Stores "trash" (Papierkorb) und "snapshots" (Sicherungspunkte) hinzugefügt.
+// Bestehende Stores bleiben unangetastet – ein Upgrade verändert keine vorhandenen Daten.
+const DB_VERSION = 2;
 
 let dbPromise = null;
 
@@ -20,9 +22,17 @@ export function openDB() {
       if (!db.objectStoreNames.contains('shopping')) db.createObjectStore('shopping', { keyPath: 'key' });
       if (!db.objectStoreNames.contains('pantry')) db.createObjectStore('pantry', { keyPath: 'name' });
       if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+      if (!db.objectStoreNames.contains('trash')) db.createObjectStore('trash', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('snapshots')) db.createObjectStore('snapshots', { keyPath: 'id' });
     };
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      // Lädt irgendwo eine neuere App-Version mit höherer DB-Version: Verbindung freigeben, neu laden
+      db.onversionchange = () => { db.close(); location.reload(); };
+      resolve(db);
+    };
     req.onerror = () => reject(req.error);
+    req.onblocked = () => reject(new Error('Die Datenbank wird gerade aktualisiert – bitte andere geöffnete Fenster der App schließen.'));
   });
   return dbPromise;
 }
@@ -57,9 +67,13 @@ export function uid(prefix = 'r') {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 }
 
-/** Merkt sich, seit wann es ungesicherte Änderungen gibt (für die Backup-Erinnerung). */
+/**
+ * Nach jeder Datenänderung aufrufen: merkt sich ungesicherte Änderungen (Backup-Erinnerung)
+ * und meldet die Änderung an das automatische Cloud-Backup (cloud.js).
+ */
 export async function markChanged() {
   if (!(await getMeta('pendingSince'))) await setMeta('pendingSince', Date.now());
+  window.dispatchEvent(new Event('kochbuch:changed'));
 }
 
 /** Rezept speichern; touch=false lässt updatedAt unverändert (z. B. beim Favorisieren). */

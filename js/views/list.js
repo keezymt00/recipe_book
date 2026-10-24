@@ -1,6 +1,7 @@
 // views/list.js – Rezeptübersicht als Kachelraster mit Suche, Favoriten-, Zeit- und Tag-Filter
 
 import { getAll, getMeta, saveRecipe } from '../db.js';
+import { getConfig, getStatus } from '../cloud.js';
 import { fold } from '../aisles.js';
 import { h, icon, glassBtn, largeTitle, recipeImage, formatMinutes } from '../ui.js';
 import { state } from '../state.js';
@@ -133,14 +134,28 @@ export async function render(root) {
   };
 }
 
-/** Erinnerung, wenn es seit über einer Woche ungesicherte Änderungen gibt */
+/**
+ * Hinweis oben in der Liste:
+ *  - automatisches Backup an, aber seit über einem Tag fehlgeschlagen → Warnung
+ *  - kein automatisches Backup und seit über einer Woche ungesicherte Änderungen → Empfehlung
+ */
 async function backupBanner() {
+  const banner = (color, iconName, title, sub) => h('a.group', { href: '#/backup', style: 'display:block;margin-bottom:14px' },
+    h('div.row', null,
+      h('span.app-icon', { style: `--c:${color}` }, icon(iconName)),
+      h('div.row-main', null, title, h('span.row-sub', null, sub)),
+      h('span.chev', null, icon('chevron'))));
+
+  if (await getConfig()) {
+    const st = await getStatus();
+    const failing = st.lastError && (!st.lastSuccess || st.lastErrorAt > st.lastSuccess);
+    if (failing && Date.now() - (st.lastSuccess || 0) > 864e5) {
+      return banner('var(--red)', 'info', 'Backup funktioniert nicht', st.lastError);
+    }
+    return null;
+  }
   const since = await getMeta('pendingSince', 0);
   if (!since || Date.now() - since < BACKUP_REMINDER_DAYS * 864e5) return null;
   const days = Math.floor((Date.now() - since) / 864e5);
-  return h('a.group', { href: '#/mehr', style: 'display:block;margin-bottom:14px' },
-    h('div.row', null,
-      h('span.app-icon', { style: '--c:var(--blue)' }, icon('share')),
-      h('div.row-main', null, 'Backup empfohlen', h('span.row-sub', null, `Ungesicherte Änderungen seit ${days} Tagen`)),
-      h('span.chev', null, icon('chevron'))));
+  return banner('var(--blue)', 'refresh', 'Automatisches Backup einrichten', `Ungesicherte Änderungen seit ${days} Tagen`);
 }

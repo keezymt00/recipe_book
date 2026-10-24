@@ -1,17 +1,21 @@
-// views/more.js – Backup (Export/Import), Speicherinfo, Beispielrezepte – im Stil der iOS-Einstellungen
+// views/more.js – Datensicherung, Sicherheitsnetz, Speicherinfo – im Stil der iOS-Einstellungen
 
 import { getAll, getMeta, putMany } from '../db.js';
 import { getPantry } from '../shopping.js';
 import { APP_VERSION } from '../version.js';
 import { createBackupFile, shareFile, downloadFile, canShareFiles, importBackup } from '../backup.js';
 import { seedRecipes } from '../seed.js';
+import { getConfig, getStatus } from '../cloud.js';
+import { createSnapshot, listTrash, listSnapshots } from '../safety.js';
 import { h, icon, largeTitle, toast, modal } from '../ui.js';
-
+import { relTime } from './cloudBackup.js';
 
 export async function render(root) {
   const recipes = await getAll('recipes');
   const lastBackup = await getMeta('lastBackup', 0);
   const pantryCount = (await getPantry()).length;
+  const [cloud, cloudStatus, trash, snapshots] = await Promise.all([getConfig(), getStatus(), listTrash(), listSnapshots()]);
+  const cloudFailing = cloud && cloudStatus.lastError && (!cloudStatus.lastSuccess || cloudStatus.lastErrorAt > cloudStatus.lastSuccess);
 
   /* --- Export --- */
   async function exportData() {
@@ -56,6 +60,7 @@ export async function render(root) {
       });
       if (!mode) return;
       try {
+        await createSnapshot('Vor Import'); // Import lässt sich so jederzeit rückgängig machen
         const { imported, skipped } = await importBackup(file, mode);
         toast(`${imported} Rezepte importiert${skipped ? ` · ${skipped} fehlerhafte übersprungen` : ''}`, 3500);
         rerender();
@@ -85,9 +90,9 @@ export async function render(root) {
     const est = await navigator.storage?.estimate?.();
     const persisted = await navigator.storage?.persisted?.();
     storageValue.textContent = est ? `${(est.usage / 1048576).toFixed(1).replace('.', ',')} MB` : '–';
-    persistNote.textContent = persisted
-      ? 'Der Speicher ist als dauerhaft markiert.'
-      : 'iOS kann Daten von Web-Apps bei Speichermangel löschen – sichere regelmäßig ein Backup in iCloud Drive.';
+    persistNote.textContent = cloud
+      ? 'Deine Daten werden automatisch in dein privates GitHub-Repository gesichert. Die Datei-Sicherung ist zusätzlich jederzeit möglich.'
+      : `${persisted ? '' : 'iOS kann Daten von Web-Apps bei Speichermangel löschen. '}Richte das automatische Backup ein, dann geht nichts verloren – auch nicht bei einem neuen iPhone.`;
   })();
 
   // Zeile im Einstellungs-Stil: farbige Symbol-Kachel, Text, Wert/Chevron
@@ -104,13 +109,28 @@ export async function render(root) {
 
   root.append(...largeTitle('Mehr'));
   root.lastChild.append(
+    h('div.section-header', { style: 'margin-top:4px' }, h('h2', null, 'Datensicherung')),
     h('div.group', null,
-      row({ iconName: 'share', color: 'var(--blue)', label: 'Backup exportieren', value: lastText, onclick: exportData }),
-      row({ iconName: 'download', color: 'var(--green)', label: 'Backup importieren', onclick: () => fileIn.click() })),
+      row({
+        iconName: cloudFailing ? 'info' : 'refresh',
+        color: cloud ? (cloudFailing ? 'var(--red)' : 'var(--green)') : 'var(--gray)',
+        label: 'Automatisches Backup',
+        value: cloud ? (cloudFailing ? 'Fehler' : relTime(cloudStatus.lastSuccess)) : 'Aus',
+        onclick: () => { location.hash = '#/backup'; },
+      }),
+      row({ iconName: 'share', color: 'var(--blue)', label: 'Backup-Datei exportieren', value: lastText, onclick: exportData }),
+      row({ iconName: 'download', color: 'var(--blue)', label: 'Backup-Datei importieren', onclick: () => fileIn.click() })),
     persistNote,
     fileIn,
 
-    h('div.group', { style: 'margin-top:28px' },
+    h('div.section-header', null, h('h2', null, 'Sicherheitsnetz')),
+    h('div.group', null,
+      row({ iconName: 'trash', color: 'var(--red)', label: 'Papierkorb', value: String(trash.length), onclick: () => { location.hash = '#/papierkorb'; } }),
+      row({ iconName: 'clock', color: 'var(--tint)', label: 'Sicherungspunkte', value: String(snapshots.length), onclick: () => { location.hash = '#/sicherungen'; } })),
+    h('p.footnote', null, 'Gelöschte Rezepte bleiben 30 Tage im Papierkorb. Sicherungspunkte entstehen täglich und vor jedem Import.'),
+
+    h('div.section-header', null, h('h2', null, 'Daten')),
+    h('div.group', null,
       row({ iconName: 'book', color: 'var(--tint)', label: 'Rezepte', value: String(recipes.length) }),
       row({ iconName: 'bag', color: 'var(--green)', label: 'Vorrat', value: String(pantryCount), onclick: () => { location.hash = '#/vorrat'; } }),
       row({ iconName: 'info', color: 'var(--gray)', label: 'Belegter Speicher', value: storageValue }),

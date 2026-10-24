@@ -18,13 +18,34 @@ ohne Framework, ohne Backend. Alle Daten liegen lokal im Browser (IndexedDB).
 - **Rezept teilen** (Teilen-Symbol in der Rezeptansicht): als Text mit der eingestellten
   Portionszahl. Der Empfänger übernimmt es vollständig über „Rezept importieren“.
 
+## Datensicherung
+
+**Automatisches Backup (Mehr → Automatisches Backup)** – einmalig einrichten:
+1. Auf GitHub ein **privates** Repository anlegen, z. B. `kochbuch-backup`.
+2. Unter Settings → Developer settings → *Fine-grained personal access tokens* einen Schlüssel
+   erstellen: Repository access *Only select repositories* → `kochbuch-backup`,
+   Permissions → *Contents: Read and write*, Ablauf z. B. 1 Jahr.
+3. Repository und Schlüssel in der App eintragen → *Verbinden*.
+
+Danach sichert die App 30 Sekunden nach jeder Änderung und beim Verlassen der App
+(ohne Internet wird es nachgeholt). Im Repo liegen `kochbuch.json` (alle Daten) und
+`photos/` (jedes Foto einmal). Jede Sicherung ist ein Commit – unter
+*Version wiederherstellen* kann jeder frühere Stand zurückgeholt werden, auch auf einem
+neuen iPhone. Öffentliche Repositories werden abgelehnt.
+
+**Sicherheitsnetz auf dem Gerät:**
+- *Papierkorb:* Gelöschte Rezepte (inkl. Foto) bleiben 30 Tage wiederherstellbar. Auch
+  Rezepte, die durch „Alles ersetzen“ wegfallen, landen dort statt gelöscht zu werden.
+- *Sicherungspunkte:* täglich automatisch und vor jedem Import bzw. jeder Wiederherstellung
+  (max. 12). Ohne Fotos, um Speicher zu sparen – Fotos bleiben beim Zurückspielen erhalten.
+
 ## Daten & Sicherheit
 
 - Alle Daten liegen nur auf dem Gerät (IndexedDB). Es gibt keinen Server, kein Tracking.
   Das GitHub-Repo enthält nur den App-Code, keine persönlichen Daten.
 - Jede Person, die die App-URL öffnet, hat ihre eigene, getrennte Datenbank.
 - Benutzereingaben werden nie als HTML ausgeführt (nur als Text dargestellt).
-- Content Security Policy: Die App lädt ausschließlich eigene Dateien.
+- Content Security Policy: Die App lädt ausschließlich eigene Dateien; Netzwerkzugriff nur auf die GitHub-API (Backup).
 - Backup-Import prüft jedes Feld (Typ, Länge, Wertebereich, Bildformat) und übernimmt nur
   geprüfte Werte; fehlerhafte Rezepte werden übersprungen statt die Datei abzulehnen.
 
@@ -46,7 +67,9 @@ js/parser.js      Rezepttext-Import (Titel, Zutaten, Schritte, Timer)
 js/seed.js        10 Beispielrezepte
 js/plan.js        Kochtage (Datum + Rezepte mit Portionen)
 js/shopping.js    Einkaufsliste berechnen, zusammenfassen, teilen
-js/backup.js      Export/Import als JSON
+js/backup.js      Daten sammeln, prüfen (Validierung) und zurückschreiben; Datei-Export/-Import
+js/cloud.js       Automatisches Backup zu GitHub (Versionen, Wiederherstellung)
+js/safety.js      Papierkorb und Sicherungspunkte
 js/ui.js          DOM-Helfer, Icons, Dialoge
 js/state.js       Flüchtiger UI-Zustand
 js/views/*.js     Eine Datei pro Bildschirm (u. a. pantry.js für den Vorrat)
