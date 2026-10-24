@@ -2,6 +2,7 @@
 
 import { get, saveRecipe } from '../db.js';
 import { formatQty } from '../units.js';
+import { toRecipeText } from '../parser.js';
 import { upcomingDays, addToDay, dayLabel } from '../plan.js';
 import { h, icon, glassBtn, navbar, recipeImage, posInt, toast } from '../ui.js';
 import { pickDay } from './sheets.js';
@@ -34,11 +35,26 @@ export async function render(root, [id], query) {
       toast(err.message);
     }
   }
+  // Als Text teilen – mit der eingestellten Portionszahl. Der Empfänger kann den Text
+  // in seiner App über "Rezept importieren" vollständig übernehmen.
+  async function share() {
+    const text = toRecipeText(r, servings);
+    if (navigator.share) {
+      try { await navigator.share({ title: r.title, text }); return; } catch (err) { if (err.name === 'AbortError') return; }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Rezept als Text kopiert');
+    } catch {
+      toast('Teilen nicht möglich');
+    }
+  }
+
   const nav = navbar({
     title: r.title,
     back: '#/',
     overlay: true,
-    actions: [heart, glassBtn('calendarPlus', 'Einplanen', planIt), glassBtn('edit', 'Bearbeiten', `#/bearbeiten/${r.id}`)],
+    actions: [heart, glassBtn('calendarPlus', 'Einplanen', planIt), glassBtn('share', 'Rezept teilen', share), glassBtn('edit', 'Bearbeiten', `#/bearbeiten/${r.id}`)],
   });
 
   /* --- Portionsrechner --- */
@@ -95,7 +111,7 @@ export async function render(root, [id], query) {
       h('div.section-header', null, h('h2', null, 'Zutaten')),
       ingGroup,
 
-      h('div.section-header', null, h('h2', null, 'Zubereitung'), r.steps.length ? h('span.aside', null, `${r.steps.length} Schritte`) : null),
+      h('div.section-header', null, h('h2', null, 'Zubereitung'), r.steps.length ? h('span.aside', null, `${r.steps.length} ${r.steps.length === 1 ? 'Schritt' : 'Schritte'}`) : null),
       r.steps.length
         ? h('div.group', null, r.steps.map((s, i) =>
           h('div.row.step', null,

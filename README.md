@@ -13,6 +13,20 @@ ohne Framework, ohne Backend. Alle Daten liegen lokal im Browser (IndexedDB).
   zusammengerechnet (auch „Zwiebel“/„Zwiebeln“), Einheiten vereinheitlicht (kg/g, l/ml, EL/TL),
   Stückzahlen aufgerundet und nach Supermarktbereich gruppiert. Abhaken, eigene Artikel
   („2 l Milch“), Vorrat ausblenden, Bereich ändern (ⓘ), als Text teilen oder kopieren.
+- **Vorrat verwalten** (Mehr → Vorrat): Artikel, die du immer zu Hause hast, frei eintragen
+  (auch mehrere mit Komma) oder aus Vorschlägen wählen – sie erscheinen nie auf der Liste.
+- **Rezept teilen** (Teilen-Symbol in der Rezeptansicht): als Text mit der eingestellten
+  Portionszahl. Der Empfänger übernimmt es vollständig über „Rezept importieren“.
+
+## Daten & Sicherheit
+
+- Alle Daten liegen nur auf dem Gerät (IndexedDB). Es gibt keinen Server, kein Tracking.
+  Das GitHub-Repo enthält nur den App-Code, keine persönlichen Daten.
+- Jede Person, die die App-URL öffnet, hat ihre eigene, getrennte Datenbank.
+- Benutzereingaben werden nie als HTML ausgeführt (nur als Text dargestellt).
+- Content Security Policy: Die App lädt ausschließlich eigene Dateien.
+- Backup-Import prüft jedes Feld (Typ, Länge, Wertebereich, Bildformat) und übernimmt nur
+  geprüfte Werte; fehlerhafte Rezepte werden übersprungen statt die Datei abzulehnen.
 
 ## Projektstruktur
 
@@ -33,7 +47,7 @@ js/shopping.js    Einkaufsliste berechnen, zusammenfassen, teilen
 js/backup.js      Export/Import als JSON
 js/ui.js          DOM-Helfer, Icons, Dialoge
 js/state.js       Flüchtiger UI-Zustand
-js/views/*.js     Eine Datei pro Bildschirm
+js/views/*.js     Eine Datei pro Bildschirm (u. a. pantry.js für den Vorrat)
 ```
 
 ## Lokal testen

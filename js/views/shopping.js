@@ -180,7 +180,8 @@ export async function render(root) {
         : null,
       h('p.footnote', null, ui.showPantry
         ? 'Diese Artikel hast du immer zu Hause. Antippen, um sie wieder einzukaufen.'
-        : `${pantry.length} Artikel, die du immer zu Hause hast, sind ausgeblendet.`));
+        : `${pantry.length} Artikel, die du immer zu Hause hast, sind ausgeblendet.`,
+      ' ', h('a', { href: '#/vorrat' }, 'Vorrat verwalten')));
   }
 
   return {

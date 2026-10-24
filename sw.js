@@ -5,7 +5,7 @@
 //  - Offline oder Netz langsamer als 3 s (Supermarkt!): sofort aus dem Cache.
 // Bei neuen Dateien VERSION erhöhen und die Liste ASSETS ergänzen.
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = `kochbuch-${VERSION}`;
 
 // App-Hülle, die beim Installieren vorab gecacht wird (relative Pfade → funktioniert auch unter /repo-name/)
@@ -34,6 +34,7 @@ const ASSETS = [
   'js/views/planner.js',
   'js/views/shopping.js',
   'js/views/sheets.js',
+  'js/views/pantry.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/apple-touch-icon.png',

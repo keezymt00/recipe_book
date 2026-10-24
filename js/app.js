@@ -12,6 +12,7 @@ import * as cook from './views/cook.js';
 import * as more from './views/more.js';
 import * as planner from './views/planner.js';
 import * as shopping from './views/shopping.js';
+import * as pantry from './views/pantry.js';
 import { openCount, seedPantry } from './shopping.js';
 
 /* ---------- Routen (Hash-basiert, funktioniert ohne Server-Konfiguration) ---------- */
@@ -26,6 +27,7 @@ const ROUTES = [
   { re: /^\/planer$/, view: planner.render, tab: 'planer' },
   { re: /^\/einkauf$/, view: shopping.render, tab: 'einkauf' },
   { re: /^\/mehr$/, view: more.render, tab: 'mehr' },
+  { re: /^\/vorrat$/, view: pantry.render, tab: 'mehr' },
 ];
 
 const viewEl = document.getElementById('view');

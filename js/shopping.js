@@ -186,6 +186,25 @@ export async function clearCustom() {
   for (const s of await getAll('shopping')) if (s.custom) await del('shopping', s.key);
 }
 
+/* ---------- Vorrat verwalten ---------- */
+
+export async function getPantry() {
+  return (await getAll('pantry')).sort((a, b) => a.label.localeCompare(b.label, 'de'));
+}
+
+/** Freitext-Artikel zum Vorrat hinzufügen; Vergleich über nameKey ("Olivenöl" passt zu "olivenöl") */
+export async function addPantryItem(label) {
+  const clean = String(label).trim().slice(0, 100);
+  if (!clean) return;
+  await put('pantry', { name: nameKey(clean), label: clean });
+  await markChanged();
+}
+
+export async function removePantryItem(name) {
+  await del('pantry', name);
+  await markChanged();
+}
+
 /** Beim ersten Start: Salz & Pfeffer gelten als Vorrat */
 export async function seedPantry() {
   for (const label of ['Salz', 'Pfeffer']) await put('pantry', { name: nameKey(label), label });

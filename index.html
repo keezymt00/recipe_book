@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <!-- viewport-fit=cover: Inhalt darf bis an die Ränder, wir polstern per safe-area-inset -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Content Security Policy: nur eigener Code und eigene Dateien, keine fremden Server.
+       Bilder zusätzlich als blob: (Fotos aus IndexedDB). Inline-Styles werden für berechnete
+       Werte (Farbton, Fortschritt) gebraucht und sind unkritisch. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
   <title>Kochbuch</title>
   <meta name="description" content="Rezepte, Kochplaner und Einkaufsliste – komplett offline.">
   <meta name="color-scheme" content="light dark">

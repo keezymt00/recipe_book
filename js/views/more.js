@@ -1,15 +1,17 @@
 // views/more.js – Backup (Export/Import), Speicherinfo, Beispielrezepte – im Stil der iOS-Einstellungen
 
 import { getAll, getMeta, putMany } from '../db.js';
+import { getPantry } from '../shopping.js';
 import { createBackupFile, shareFile, downloadFile, canShareFiles, importBackup } from '../backup.js';
 import { seedRecipes } from '../seed.js';
 import { h, icon, largeTitle, toast, modal } from '../ui.js';
 
-const APP_VERSION = '2.0';
+const APP_VERSION = '2.1';
 
 export async function render(root) {
   const recipes = await getAll('recipes');
   const lastBackup = await getMeta('lastBackup', 0);
+  const pantryCount = (await getPantry()).length;
 
   /* --- Export --- */
   async function exportData() {
@@ -54,8 +56,8 @@ export async function render(root) {
       });
       if (!mode) return;
       try {
-        const n = await importBackup(file, mode);
-        toast(`${n} Rezepte importiert`);
+        const { imported, skipped } = await importBackup(file, mode);
+        toast(`${imported} Rezepte importiert${skipped ? ` · ${skipped} fehlerhafte übersprungen` : ''}`, 3500);
         rerender();
       } catch (err) {
         toast(err.message, 3500);
@@ -110,6 +112,7 @@ export async function render(root) {
 
     h('div.group', { style: 'margin-top:28px' },
       row({ iconName: 'book', color: 'var(--tint)', label: 'Rezepte', value: String(recipes.length) }),
+      row({ iconName: 'bag', color: 'var(--green)', label: 'Vorrat', value: String(pantryCount), onclick: () => { location.hash = '#/vorrat'; } }),
       row({ iconName: 'info', color: 'var(--gray)', label: 'Belegter Speicher', value: storageValue }),
       row({ iconName: 'refresh', color: 'var(--purple)', label: 'Beispielrezepte wiederherstellen', onclick: restoreSeeds })),
     h('p.footnote', null, 'Fügt fehlende der 10 Startrezepte wieder hinzu. Deine eigenen Rezepte bleiben unverändert.'),

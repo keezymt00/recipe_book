@@ -5,7 +5,7 @@
 //  - ohne Überschriften → Heuristik: kurze Zeilen mit Mengenangabe = Zutat, Sätze = Schritt
 // Das Ergebnis füllt nur das Formular vor; der Nutzer prüft vor dem Speichern.
 
-import { parseAmount, normalizeUnit } from './units.js';
+import { parseAmount, normalizeUnit, formatQty } from './units.js';
 import { guessAisle } from './aisles.js';
 
 const FRAC = '[½¼¾⅓⅔⅛]';
@@ -20,6 +20,10 @@ const STEP_HEADER = /^(zubereitung|anleitung|so geht'?s|schritte|arbeitsschritte
 const NOTE_HEADER = /^(tipps?|hinweise?|notizen|anmerkungen?|nährwerte|notes|tips)\b/i;
 const TIME_LINE = /^(zubereitungszeit|kochzeit|backzeit|garzeit|gesamtzeit|arbeitszeit|vorbereitungszeit|zeit|dauer|total time|cook time|prep time|tiempo)\b\s*:?\s*(.*)$/i;
 const SERVINGS_RE = /(\d+)\s*(portionen|portion|personen|person|pers\.?|servings|raciones)\b/i;
+const TAGS_LINE = /^tags\s*:\s*(.+)$/i;
+const NUTRITION_LINE = /^(?:nährwerte\s+)?pro portion\s*:\s*(.+)$/i;
+// Expliziter Timer am Schrittende (vom "Rezept teilen"-Export): "… schmoren. ⏱ 18 Min."
+const STEP_TIMER = /\s*⏱\s*(\d+)\s*min\.?\s*$/i;
 const SERVINGS_LINE = /^(?:portionen|personen|servings|ergibt|für)\s*:?\s*(\d+)/i;
 
 // Dauer-Angaben in Schritten für automatische Timer: "20 Minuten", "5-7 Min.", "1 Std."
@@ -127,7 +131,7 @@ function splitParagraph(text) {
  * Rezepttext → { title, servings, timeMin, ingredients[], steps[], notes }
  */
 export function parseRecipeText(text) {
-  const result = { title: '', servings: null, timeMin: null, ingredients: [], steps: [], notes: '' };
+  const result = { title: '', servings: null, timeMin: null, ingredients: [], steps: [], notes: '', tags: [], nutrition: {} };
   const lines = String(text).replace(/\r/g, '').split('\n')
     .map((l) => l.replace(/[\t ]+/g, ' ').replace(/^#+\s*/, '').replace(/^\*\*(.+)\*\*:?$/, '$1').trim());
 
@@ -148,7 +152,14 @@ export function parseRecipeText(text) {
   };
 
   const addStep = (line) => {
-    const clean = stripStepNumber(stripBullet(line));
+    let clean = stripStepNumber(stripBullet(line));
+    const explicit = clean.match(STEP_TIMER);
+    if (explicit) {
+      clean = clean.replace(STEP_TIMER, '');
+      result.steps.push({ text: clean, timerMin: Number(explicit[1]) });
+      stepsStarted = true;
+      return;
+    }
     if (!clean) return;
     for (const part of splitParagraph(clean)) result.steps.push({ text: part, timerMin: detectTimer(part) });
     stepsStarted = true;
@@ -172,6 +183,20 @@ export function parseRecipeText(text) {
     if (time && line.length < 60) {
       const min = parseDuration(time[2]);
       if (min) result.timeMin = Math.max(result.timeMin || 0, min);
+      continue;
+    }
+    // Tags und Nährwerte (Format des "Rezept teilen"-Exports)
+    const tags = mode !== 'steps' && line.match(TAGS_LINE);
+    if (tags) {
+      result.tags = tags[1].split(/\s*[,·]\s*/).map((t) => t.trim()).filter(Boolean).slice(0, 20);
+      continue;
+    }
+    const nut = mode !== 'steps' && line.match(NUTRITION_LINE);
+    if (nut) {
+      const protein = nut[1].match(/(\d+(?:[.,]\d+)?)\s*g\s*protein/i);
+      const kcal = nut[1].match(/(\d+)\s*kcal/i);
+      if (protein) result.nutrition.protein = parseAmount(protein[1]);
+      if (kcal) result.nutrition.kcal = Number(kcal[1]);
       continue;
     }
     if (line.length < 40 && mode !== 'steps') {
@@ -211,4 +236,37 @@ export function parseRecipeText(text) {
   result.notes = notes.join('\n');
   if (!result.title) result.title = 'Neues Rezept';
   return result;
+}
+
+/**
+ * Rezept → gut lesbarer Text zum Teilen. Das Format ist so gewählt, dass parseRecipeText()
+ * es vollständig zurückliest (inkl. Tags, Nährwerte und Timer) – der Empfänger kann es
+ * also einfach über "Rezept importieren" übernehmen.
+ */
+export function toRecipeText(recipe, servings = recipe.servings) {
+  const factor = servings / recipe.servings;
+  const lines = [recipe.title];
+  lines.push(`Für ${servings} ${servings === 1 ? 'Portion' : 'Portionen'}${recipe.timeMin ? ` · ${recipe.timeMin} Min.` : ''}`);
+  if (recipe.tags.length) lines.push(`Tags: ${recipe.tags.join(', ')}`);
+  const n = recipe.nutrition || {};
+  if (n.protein || n.kcal) {
+    lines.push(`Pro Portion: ${[n.protein ? `${n.protein} g Protein` : null, n.kcal ? `${n.kcal} kcal` : null].filter(Boolean).join(' · ')}`);
+  }
+
+  lines.push('', 'Zutaten');
+  for (const ing of recipe.ingredients) {
+    const qty = ing.amount != null ? formatQty(ing.amount * factor, ing.unit) : '';
+    // "Stk" wird bei formatQty weggelassen – das liest der Parser ebenfalls richtig
+    lines.push(`- ${qty ? `${qty} ` : ''}${ing.name}`);
+  }
+
+  lines.push('', 'Zubereitung');
+  recipe.steps.forEach((step, i) => {
+    // Timer nur anhängen, wenn er sich nicht ohnehin aus dem Text ergibt
+    const timer = step.timerMin && step.timerMin !== detectTimer(step.text) ? ` ⏱ ${step.timerMin} Min.` : '';
+    lines.push(`${i + 1}. ${step.text}${timer}`);
+  });
+
+  if (recipe.notes) lines.push('', 'Notizen', recipe.notes);
+  return lines.join('\n');
 }
