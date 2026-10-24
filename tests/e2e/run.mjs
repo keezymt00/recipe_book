@@ -256,10 +256,19 @@ await scenario('Sheets: kein Auto-Fokus (iOS-Kalender/Tastatur), Liste scrollbar
   await page(`document.querySelector('.sheet .pill').click()`);
   await sleep(800);
   expect(await page('document.activeElement.tagName'), 'BODY', 'Fokus in der Rezeptauswahl');
-  const box = await page(`const r = document.querySelector('.pick-list').getBoundingClientRect(); ({ x: r.x + r.width / 2, y: r.y + r.height / 2 })`);
-  await send('Input.synthesizeScrollGesture', { x: box.x, y: box.y, yDistance: -250, gestureSourceType: 'touch', speed: 800 });
-  await sleep(500);
-  if (!(await page('document.querySelector(".pick-list").scrollTop > 50'))) throw new Error('Rezeptliste scrollt nicht');
+  // Was Scrollen auf iOS ausmacht: eigener Scrollbereich mit Überlänge, kein Weiterreichen
+  // des Scrollens an die Seite, Seite dahinter gesperrt
+  const st = await page(`const l = document.querySelector('.pick-list'), cs = getComputedStyle(l);
+    ({ overflow: cs.overflowY, overscroll: cs.overscrollBehaviorY, longer: l.scrollHeight > l.clientHeight + 50,
+       locked: document.body.classList.contains('sheet-open') && getComputedStyle(document.body).overflow === 'hidden' })`);
+  expect(st, { overflow: 'auto', overscroll: 'contain', longer: true, locked: true }, 'Scrollbereich der Rezeptliste');
+  // Echte Touch-Wischgeste – nur wo der Browser sie ausführen kann (headless Linux in CI kann es nicht)
+  if (!process.env.CI) {
+    const box = await page(`const r = document.querySelector('.pick-list').getBoundingClientRect(); ({ x: r.x + r.width / 2, y: r.y + r.height / 2 })`);
+    await send('Input.synthesizeScrollGesture', { x: box.x, y: box.y, yDistance: -250, gestureSourceType: 'touch', speed: 800 });
+    await sleep(500);
+    if (!(await page('document.querySelector(".pick-list").scrollTop > 50'))) throw new Error('Rezeptliste scrollt nicht per Wischgeste');
+  }
 });
 
 await scenario('Backup-Import: manipulierte Datei wird gefiltert', async () => {
