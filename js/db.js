@@ -4,8 +4,9 @@ import { guessAisle } from './aisles.js';
 
 const DB_NAME = 'kochbuch';
 // Version 2: Stores "trash" (Papierkorb) und "snapshots" (Sicherungspunkte) hinzugefügt.
+// Version 3: Store "fridge" (Meal-Prep-Kühlschrank) hinzugefügt.
 // Bestehende Stores bleiben unangetastet – ein Upgrade verändert keine vorhandenen Daten.
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise = null;
 
@@ -24,6 +25,7 @@ export function openDB() {
       if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
       if (!db.objectStoreNames.contains('trash')) db.createObjectStore('trash', { keyPath: 'id' });
       if (!db.objectStoreNames.contains('snapshots')) db.createObjectStore('snapshots', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('fridge')) db.createObjectStore('fridge', { keyPath: 'id' });
     };
     req.onsuccess = () => {
       const db = req.result;

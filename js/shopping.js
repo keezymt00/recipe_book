@@ -47,7 +47,7 @@ function baseQty(amount, unit) {
 }
 
 /** { g: 1300, Zehe: 3 } → "1,3 kg + 3 Zehen" */
-function formatQuantities(qty) {
+export function formatQuantities(qty) {
   return Object.entries(qty).map(([unit, amount]) => {
     // Löffel: in EL anzeigen, wenn es glatt aufgeht (6 TL → 2 EL), sonst TL (4 TL statt 1⅓ EL)
     const el = amount / 3;

@@ -1,0 +1,11 @@
+{
+  "name": "kochbuch",
+  "private": true,
+  "description": "Kochbuch-PWA – Tests laufen ohne Abhängigkeiten (nur Node und Chrome)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/unit/*.test.mjs",
+    "test:e2e": "node tests/e2e/run.mjs",
+    "test:all": "npm test && npm run test:e2e"
+  }
+}

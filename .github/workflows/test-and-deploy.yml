@@ -1,0 +1,56 @@
+# Tests bei jedem Push; veröffentlicht wird nur, wenn alle Tests bestehen.
+# Voraussetzung (einmalig): Repo → Settings → Pages → Source: "GitHub Actions".
+name: Tests & Veröffentlichen
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Nie zwei Veröffentlichungen gleichzeitig
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Unit-Tests (Parser, Einkaufsliste, Backup, Kühlschrank, Struktur)
+        run: npm test
+      - name: Browser-Tests (Chrome)
+        run: npm run test:e2e
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+
+  deploy:
+    name: Veröffentlichen
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Nur die App-Dateien zusammenstellen
+        run: |
+          mkdir _site
+          cp -r index.html styles.css manifest.json sw.js .nojekyll icons js _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

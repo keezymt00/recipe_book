@@ -8,6 +8,7 @@ import {
 import { buildList } from '../shopping.js';
 import { h, icon, glassBtn, largeTitle, toast, modal, confirmDialog, recipeImage, formatMinutes } from '../ui.js';
 import { pickDay, pickRecipe } from './sheets.js';
+import { storeSheet, coverageRows, planGap } from './fridge.js';
 
 export async function render(root) {
   const [allDays, recipes, { items }] = await Promise.all([getDays(), getAll('recipes'), buildList()]);
@@ -56,6 +57,7 @@ export async function render(root) {
       actions: [
         { label: 'Rezept ansehen', value: 'open', kind: 'tinted' },
         { label: 'Kochmodus starten', value: 'cook', kind: 'tinted' },
+        { label: 'Gekocht – Portionen einlagern', value: 'store', kind: 'tinted' },
         { label: 'Aus dem Plan entfernen', value: 'remove', kind: 'danger' },
         { label: 'Abbrechen', value: null },
       ],
@@ -63,6 +65,10 @@ export async function render(root) {
     if (choice === 'open') location.hash = `#/rezept/${recipe.id}?p=${entry.servings}`;
     if (choice === 'cook') location.hash = `#/kochen/${recipe.id}?p=${entry.servings}`;
     if (choice === 'remove') { await removeEntry(day.id, entry.id); rerender(); }
+    if (choice === 'store') {
+      await new Promise((r) => setTimeout(r, 300));
+      if (await storeSheet(recipe, entry.servings, { title: 'Einlagern' })) rerender();
+    }
   }
 
   /* --- Zeile für ein geplantes Rezept mit Portions-Stepper --- */
@@ -108,7 +114,12 @@ export async function render(root) {
   // Nur echte Knoten anhängen – append(null) würde den Text "null" einfügen
   const add = (...nodes) => head.append(...nodes.flat().filter((n) => n != null && n !== false));
 
+  // Meal-Prep-Vorrat: "Versorgt bis …" und Lücken bis zum nächsten Kochtag
+  const fridgeSummary = await coverageRows({ onPlanGap: planGap });
+  const fridgeBlock = fridgeSummary ? [fridgeSummary, h('div', { style: 'height:14px' })] : [];
+
   if (!days.length) {
+    add(fridgeBlock);
     add(h('div.empty', null,
       icon('calendar'),
       h('h3', null, 'Noch keine Kochtage'),
@@ -119,6 +130,7 @@ export async function render(root) {
     add(
       h('p.footnote', { style: 'margin:-6px 4px 16px;font-size:15px' },
         `${days.length} ${days.length === 1 ? 'Kochtag' : 'Kochtage'} · ${totalServings} Portionen`),
+      fridgeBlock,
       h('div.group', null,
         h('a.row', { href: '#/einkauf', style: '--inset:58px' },
           h('span.app-icon', { style: '--c:var(--green)' }, icon('bag')),

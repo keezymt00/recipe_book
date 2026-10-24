@@ -13,6 +13,12 @@ ohne Framework, ohne Backend. Alle Daten liegen lokal im Browser (IndexedDB).
   zusammengerechnet (auch „Zwiebel“/„Zwiebeln“), Einheiten vereinheitlicht (kg/g, l/ml, EL/TL),
   Stückzahlen aufgerundet und nach Supermarktbereich gruppiert. Abhaken, eigene Artikel
   („2 l Milch“), Vorrat ausblenden, Bereich ändern (ⓘ), als Text teilen oder kopieren.
+- **Meal-Prep-Kühlschrank** (Planer → „Versorgt bis …“): Nach dem Kochmodus (oder im Planer
+  über „Gekocht – Portionen einlagern“) fragt die App, wie viele Portionen in Kühlschrank oder
+  Gefrierschrank kommen. Haltbarkeit aus den Rezeptnotizen („Hält sich 3 Tage“), sonst 4 Tage.
+  Übersicht mit Resthaltbarkeit, „Portion gegessen“, Einfrieren/Auftauen, „versorgt bis“ und
+  Warnung, wenn bis zum nächsten Kochtag Essen fehlt. Badge an der Planer-Tab, wenn etwas
+  heute gegessen werden muss.
 - **Vorrat verwalten** (Mehr → Vorrat): Artikel, die du immer zu Hause hast, frei eintragen
   (auch mehrere mit Komma) oder aus Vorschlägen wählen – sie erscheinen nie auf der Liste.
 - **Rezept teilen** (Teilen-Symbol in der Rezeptansicht): als Text mit der eingestellten
@@ -78,6 +84,8 @@ js/shopping.js    Einkaufsliste berechnen, zusammenfassen, teilen
 js/backup.js      Daten sammeln, prüfen (Validierung) und zurückschreiben; Datei-Export/-Import
 js/cloud.js       Automatisches Backup zu GitHub (Versionen, Wiederherstellung)
 js/safety.js      Papierkorb und Sicherungspunkte
+js/fridge.js      Meal-Prep-Kühlschrank: Haltbarkeit, Portionen, „versorgt bis“
+tests/            Unit-Tests (node --test) und Browser-Tests (Chrome über CDP)
 js/ui.js          DOM-Helfer, Icons, Dialoge
 js/state.js       Flüchtiger UI-Zustand
 js/views/*.js     Eine Datei pro Bildschirm (u. a. pantry.js für den Vorrat)
@@ -99,6 +107,22 @@ Dann `http://localhost:8000` im Browser öffnen (am besten mit den DevTools in d
 > Auf dem iPhone über `http://192.168.x.x:8000` läuft die App zwar, aber ohne diese beiden
 > Funktionen. Für den echten iPhone-Test → GitHub Pages (unten).
 
+## Tests
+
+Ohne Abhängigkeiten – nur Node (≥ 20) und Chrome:
+
+```bash
+npm test            # Unit-Tests: Parser, Einheiten, Einkaufsliste, Backup-Prüfung, Kühlschrank, Struktur
+npm run test:e2e    # Browser-Tests der wichtigsten Abläufe in headless Chrome
+```
+
+Die Browser-Tests starten einen eigenen Webserver und Chrome, beginnen jedes Szenario mit leerem
+Speicher und schlagen auch bei Konsolenfehlern oder CSP-Verstößen fehl. Das Cloud-Backup wird
+gegen einen Nachbau der GitHub-API getestet.
+
+Bei jedem Push laufen beide Testarten auf GitHub Actions (`.github/workflows/test-and-deploy.yml`).
+**Veröffentlicht wird nur, wenn alle Tests bestehen** – ein fehlerhaftes Update erreicht das iPhone nicht.
+
 ## Auf GitHub Pages veröffentlichen
 
 1. Auf <https://github.com/new> ein neues Repository anlegen, z. B. `kochbuch`.
@@ -112,8 +136,7 @@ Dann `http://localhost:8000` im Browser öffnen (am besten mit den DevTools in d
    git push -u origin main
    ```
 3. Auf GitHub im Repo: **Settings → Pages → Build and deployment**
-   - Source: **Deploy from a branch**
-   - Branch: **main**, Ordner **/ (root)** → **Save**
+   - Source: **GitHub Actions** (dann veröffentlicht der Workflow nach bestandenen Tests)
 4. Nach 1–2 Minuten ist die App erreichbar unter
    `https://DEIN-NAME.github.io/kochbuch/`
 

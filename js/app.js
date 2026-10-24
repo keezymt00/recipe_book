@@ -20,6 +20,8 @@ import { cleanupTrash, dailySnapshot } from './safety.js';
 import * as cloudBackup from './views/cloudBackup.js';
 import * as trashView from './views/trash.js';
 import * as snapshotsView from './views/snapshots.js';
+import * as fridgeView from './views/fridge.js';
+import { urgentCount } from './fridge.js';
 
 /* ---------- Routen (Hash-basiert, funktioniert ohne Server-Konfiguration) ---------- */
 
@@ -37,6 +39,7 @@ const ROUTES = [
   { re: /^\/backup$/, view: cloudBackup.render, tab: 'mehr' },
   { re: /^\/papierkorb$/, view: trashView.render, tab: 'mehr' },
   { re: /^\/sicherungen$/, view: snapshotsView.render, tab: 'mehr' },
+  { re: /^\/kuehlschrank$/, view: fridgeView.render, tab: 'planer' },
 ];
 
 const viewEl = document.getElementById('view');
@@ -99,15 +102,20 @@ function updateNav() {
 }
 window.addEventListener('scroll', updateNav, { passive: true });
 
-/* ---------- Badge an der Einkaufs-Tab: Anzahl offener Artikel ---------- */
+/* ---------- Badges an der Tab-Leiste ---------- */
 
-async function updateBadge() {
-  const tab = document.querySelector('#tabbar [data-tab="einkauf"]');
-  const n = await openCount().catch(() => 0);
+function setBadge(tabName, n) {
+  const tab = document.querySelector(`#tabbar [data-tab="${tabName}"]`);
   let badge = tab.querySelector('.tab-badge');
   if (!n) { badge?.remove(); return; }
   if (!badge) tab.append(badge = Object.assign(document.createElement('span'), { className: 'tab-badge' }));
   badge.textContent = n > 99 ? '99+' : String(n);
+}
+
+// Einkauf: offene Artikel · Planer: Portionen, die heute weg müssen oder abgelaufen sind
+async function updateBadge() {
+  setBadge('einkauf', await openCount().catch(() => 0));
+  setBadge('planer', await urgentCount().catch(() => 0));
 }
 
 /* ---------- Start ---------- */

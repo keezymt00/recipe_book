@@ -8,7 +8,7 @@ import { AISLES } from './aisles.js';
 
 export const FORMAT = 'kochbuch';
 export const FORMAT_VERSION = 1;
-const STORES = ['plan', 'shopping', 'pantry'];
+const STORES = ['plan', 'shopping', 'pantry', 'fridge'];
 
 export function blobToDataURL(blob) {
   return new Promise((resolve, reject) => {
@@ -164,6 +164,22 @@ function cleanPantry(p) {
   return name && label ? { name, label } : null;
 }
 
+function cleanFridge(f) {
+  if (!isObj(f) || typeof f.id !== 'string' || !ID_RE.test(f.id)) return null;
+  const title = str(f.title, 200).trim();
+  const portions = num(f.portions, 0.5, 99);
+  if (!title || !portions || !DATE_RE.test(f.since) || !DATE_RE.test(f.expires)) return null;
+  return {
+    id: f.id,
+    recipeId: typeof f.recipeId === 'string' && ID_RE.test(f.recipeId) ? f.recipeId : null,
+    title,
+    portions,
+    location: f.location === 'freezer' ? 'freezer' : 'fridge',
+    since: f.since,
+    expires: f.expires,
+  };
+}
+
 function cleanOverrides(o) {
   const out = {};
   if (!isObj(o)) return out;
@@ -184,6 +200,7 @@ export function cleanData(data) {
     plan: list(data.plan, 1000).map(cleanDay).filter(Boolean),
     shopping: list(data.shopping, 5000).map(cleanShopping).filter(Boolean),
     pantry: list(data.pantry, 2000).map(cleanPantry).filter(Boolean),
+    fridge: list(data.fridge, 1000).map(cleanFridge).filter(Boolean),
     aisleOverrides: cleanOverrides(data.aisleOverrides),
   };
 }

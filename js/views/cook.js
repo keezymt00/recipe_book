@@ -4,6 +4,7 @@
 import { get } from '../db.js';
 import { formatQty } from '../units.js';
 import { h, icon, glassBtn, confirmDialog, posInt, goBack } from '../ui.js';
+import { storeSheet } from './fridge.js';
 
 const RING_R = 96;
 const RING_C = 2 * Math.PI * RING_R; // Umfang für stroke-dasharray
@@ -149,7 +150,7 @@ export async function render(root, [id], query) {
   const body = h('div.cook-body');
   let clockEl = null;
   const prevBtn = h('button.btn', { type: 'button', onclick: () => go(idx - 1) }, 'Zurück');
-  const nextBtn = h('button.btn.btn-primary', { type: 'button', onclick: () => (idx === last ? exit() : go(idx + 1)) });
+  const nextBtn = h('button.btn.btn-primary', { type: 'button', onclick: () => (idx === last ? finish() : go(idx + 1)) });
 
   root.append(h('div.cook', null,
     h('div.cook-head', null,
@@ -236,6 +237,13 @@ export async function render(root, [id], query) {
   function go(n) {
     idx = Math.min(last, Math.max(0, n));
     show();
+  }
+
+  // Fertig gekocht → fragen, was in Kühlschrank/Gefrierschrank kommt, dann zurück
+  async function finish() {
+    if (timers.some((t) => !t.done) && !(await confirmDialog('Es laufen noch Timer. Trotzdem beenden?', 'Beenden', true))) return;
+    await storeSheet(r, servings);
+    goBack(backTarget);
   }
 
   async function exit() {
