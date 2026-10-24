@@ -1,0 +1,764 @@
+/* ==========================================================================
+   Kochbuch – Styles im Stil von iOS 26
+   Systemfarben, große Titel, gruppierte Listen, "Liquid Glass"-Bedienelemente.
+   Mobile-first (iPhone), Dark Mode folgt dem System, Safe-Areas für Notch.
+   ========================================================================== */
+
+:root {
+  /* iOS-Systemfarben (hell) */
+  --bg: #f2f2f7;                       /* systemGroupedBackground */
+  --card: #ffffff;                     /* secondarySystemGroupedBackground */
+  --fill: rgba(120, 120, 128, .12);    /* tertiarySystemFill */
+  --fill-2: rgba(120, 120, 128, .2);
+  --label: #000000;
+  --label-2: rgba(60, 60, 67, .6);     /* secondaryLabel */
+  --label-3: rgba(60, 60, 67, .3);     /* tertiaryLabel */
+  --separator: rgba(60, 60, 67, .29);
+  --tint: #ff9500;                     /* systemOrange */
+  --tint-soft: rgba(255, 149, 0, .14);
+  --red: #ff3b30;
+  --pink: #ff2d55;
+  --green: #34c759;
+  --blue: #007aff;
+  --purple: #af52de;
+  --gray: #8e8e93;
+
+  /* Glas & Material */
+  --glass: rgba(255, 255, 255, .72);
+  --glass-strong: rgba(255, 255, 255, .86);
+  --glass-edge: rgba(255, 255, 255, .8);
+  --glass-shadow: 0 8px 28px rgba(0, 0, 0, .12), 0 1px 3px rgba(0, 0, 0, .06);
+  --bar: rgba(242, 242, 247, .78);
+  --blur: saturate(180%) blur(22px);
+
+  --radius: 16px;
+  --gutter: 16px;
+  --tab-h: 62px;
+  --tab-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 8px));
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, "Helvetica Neue", sans-serif;
+  --font-rounded: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --card: #1c1c1e;
+    --fill: rgba(118, 118, 128, .24);
+    --fill-2: rgba(118, 118, 128, .36);
+    --label: #ffffff;
+    --label-2: rgba(235, 235, 245, .6);
+    --label-3: rgba(235, 235, 245, .3);
+    --separator: rgba(84, 84, 88, .65);
+    --tint: #ff9f0a;
+    --tint-soft: rgba(255, 159, 10, .18);
+    --red: #ff453a;
+    --pink: #ff375f;
+    --green: #30d158;
+    --blue: #0a84ff;
+    --purple: #bf5af2;
+    --glass: rgba(44, 44, 46, .62);
+    --glass-strong: rgba(44, 44, 46, .86);
+    --glass-edge: rgba(255, 255, 255, .12);
+    --glass-shadow: 0 8px 28px rgba(0, 0, 0, .5);
+    --bar: rgba(0, 0, 0, .7);
+  }
+}
+
+/* ---------- Grundlagen ---------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--label);
+  font: 17px/1.35 var(--font);
+  letter-spacing: -.41px;              /* SF-Text-Laufweite bei 17pt */
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[hidden] { display: none !important; }
+a { color: var(--tint); text-decoration: none; }
+button { font: inherit; letter-spacing: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; }
+
+/* Eingaben: mind. 16px, sonst zoomt iOS beim Fokussieren */
+input, textarea, select {
+  font: inherit;
+  font-size: 17px;
+  letter-spacing: inherit;
+  color: var(--label);
+  background: transparent;
+  border: 0;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  caret-color: var(--tint);
+}
+input::placeholder, textarea::placeholder { color: var(--label-3); }
+textarea { resize: none; line-height: 1.4; }
+
+.icon { display: inline-flex; flex: none; }
+.icon svg { width: 22px; height: 22px; display: block; }
+
+.rounded { font-family: var(--font-rounded); letter-spacing: 0; }
+
+/* ---------- Seitenlayout ---------- */
+
+#view { padding-bottom: calc(var(--tab-h) + var(--tab-bottom) + 28px); }
+body.cooking #view { padding-bottom: 0; }
+
+.content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 max(var(--gutter), var(--sar)) 0 max(var(--gutter), var(--sal));
+}
+
+.large-title {
+  margin: 2px 0 12px;
+  font-size: 34px;
+  line-height: 41px;
+  font-weight: 700;
+  letter-spacing: .37px;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 30px 4px 10px;
+}
+.section-header h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: .35px; }
+.section-header .aside { color: var(--label-2); font-size: 15px; letter-spacing: -.24px; }
+.footnote { color: var(--label-2); font-size: 13px; letter-spacing: -.08px; margin: 8px 16px 0; line-height: 1.38; }
+.footnote.center { text-align: center; margin-top: 20px; }
+
+/* ---------- Navigationsleiste ---------- */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: var(--sat) max(10px, var(--sar)) 0 max(10px, var(--sal));
+  transition: background-color .2s, box-shadow .2s;
+}
+.nav-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  max-width: 740px;
+  margin: 0 auto;
+}
+.nav-title {
+  position: absolute;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.nav-spacer { flex: 1; }
+/* Material erst beim Scrollen (wie iOS "scroll edge appearance") */
+.nav.scrolled {
+  background: var(--bar);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: 0 .5px 0 var(--separator);
+}
+/* Seiten mit großem Titel: kleiner Titel erscheint erst beim Scrollen */
+.nav.large .nav-title { opacity: 0; }
+.nav.large.scrolled .nav-title { opacity: 1; }
+/* Detailseite: Leiste liegt über dem Titelbild */
+.nav.overlay { position: fixed; left: 0; right: 0; }
+.nav.overlay:not(.scrolled) .nav-title { opacity: 0; }
+
+/* Runde Glas-Buttons (iOS 26) */
+.glass-btn {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: inset 0 0 0 .5px var(--glass-edge), 0 2px 10px rgba(0, 0, 0, .08);
+  color: var(--label);
+  transition: transform .15s;
+}
+.glass-btn:active { transform: scale(.92); }
+.glass-btn .icon svg { width: 20px; height: 20px; }
+.glass-btn.tinted { background: var(--tint); color: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
+.glass-btn.on { color: var(--pink); }
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--label);
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  transition: transform .15s, opacity .15s;
+}
+.btn:active { transform: scale(.97); opacity: .85; }
+.btn:disabled { opacity: .35; }
+.btn .icon svg { width: 19px; height: 19px; }
+.btn-primary { background: var(--tint); color: #fff; }
+.btn-tinted { background: var(--tint-soft); color: var(--tint); }
+.btn-danger { color: var(--red); }
+.btn-danger-fill { background: var(--red); color: #fff; }
+.btn-block { display: flex; width: 100%; }
+.btn-sm { min-height: 34px; padding: 0 14px; font-size: 15px; letter-spacing: -.24px; }
+.btn-row { display: flex; gap: 10px; }
+.btn-row > .btn { flex: 1; }
+
+/* Schwebende Hauptaktion über der Tab-Leiste */
+.fab {
+  position: fixed;
+  z-index: 25;
+  left: max(20px, var(--sal));
+  right: max(20px, var(--sar));
+  bottom: calc(var(--tab-bottom) + var(--tab-h) + 12px);
+  max-width: 520px;
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
+}
+
+/* ---------- Suche & Filter ---------- */
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: var(--fill);
+  color: var(--label-2);
+}
+.search .icon svg { width: 18px; height: 18px; }
+.search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.pills {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 12px calc(-1 * var(--gutter)) 18px;
+  padding: 0 var(--gutter);
+  scrollbar-width: none;
+}
+.pills::-webkit-scrollbar { display: none; }
+.pills.wrap { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
+.pill {
+  flex: none;
+  height: 34px;
+  padding: 0 15px;
+  border-radius: 17px;
+  background: var(--card);
+  color: var(--label);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -.24px;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 .5px var(--separator);
+  transition: background-color .15s, color .15s;
+}
+.pill.on { background: var(--tint); color: #fff; box-shadow: none; }
+.pill-sep { flex: none; width: .5px; background: var(--separator); margin: 6px 2px; }
+
+/* ---------- Rezept-Kacheln ---------- */
+
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
+@media (min-width: 640px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.tile { display: block; color: inherit; transition: transform .15s; }
+.tile:active { transform: scale(.97); }
+.tile-media { position: relative; }
+.tile .thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 18px;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  font-size: 54px;
+}
+.tile .glass-btn { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; }
+.tile .glass-btn .icon svg { width: 17px; height: 17px; }
+.tile-title {
+  margin: 8px 2px 1px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.27;
+  letter-spacing: -.24px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tile-meta { margin: 0 2px; color: var(--label-2); font-size: 13px; letter-spacing: -.08px; }
+
+/* Platzhalter ohne Foto: weicher Verlauf im rezepteigenen Farbton */
+.thumb-ph {
+  background: linear-gradient(145deg, hsl(var(--h, 30) 85% 92%), hsl(calc(var(--h, 30) + 35) 80% 82%));
+}
+.thumb-ph > span { filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .15)); }
+@media (prefers-color-scheme: dark) {
+  .thumb-ph { background: linear-gradient(145deg, hsl(var(--h, 30) 30% 26%), hsl(calc(var(--h, 30) + 35) 32% 16%)); }
+}
+
+/* ---------- Gruppierte Listen (wie Einstellungen) ---------- */
+
+.group { background: var(--card); border-radius: var(--radius); overflow: hidden; }
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 11px 16px;
+  width: 100%;
+  color: var(--label);
+  text-align: left;
+}
+/* Haarlinie, eingerückt wie bei iOS */
+.row + .row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: var(--inset, 16px);
+  height: .5px;
+  background: var(--separator);
+}
+button.row:active, a.row:active { background: var(--fill); }
+.row-main { flex: 1; min-width: 0; }
+.row-sub { display: block; color: var(--label-2); font-size: 13px; letter-spacing: -.08px; margin-top: 1px; }
+.row-value { color: var(--label-2); text-align: right; font-variant-numeric: tabular-nums; }
+.row .chev { color: var(--label-3); }
+.row .chev svg { width: 16px; height: 16px; }
+.row.center { justify-content: center; font-weight: 400; }
+.row.danger { color: var(--red); }
+.row.action { color: var(--tint); }
+
+/* Farbige Symbol-Kachel wie in den iOS-Einstellungen */
+.app-icon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: #fff;
+  background: var(--c, var(--gray));
+}
+.app-icon svg { width: 18px; height: 18px; }
+
+/* Abhak-Kreis wie in Erinnerungen */
+.check {
+  width: 23px;
+  height: 23px;
+  flex: none;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--label-3);
+  display: grid;
+  place-items: center;
+  color: transparent;
+  transition: background-color .15s, box-shadow .15s;
+}
+.check svg { width: 14px; height: 14px; }
+.done .check { background: var(--tint); box-shadow: none; color: #fff; }
+.done .ing-name, .done .ing-qty { color: var(--label-3); }
+.done .ing-name { text-decoration: line-through; }
+
+.ing-row { --inset: 51px; cursor: pointer; }
+.ing-name { flex: 1; min-width: 0; }
+.ing-qty { color: var(--label-2); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- Rezept-Detail ---------- */
+
+.hero {
+  display: block;
+  width: 100%;
+  height: min(52vh, 420px);
+  object-fit: cover;
+}
+.hero.thumb-ph { display: grid; place-items: center; font-size: 96px; height: min(42vh, 340px); }
+.hero-wrap { position: relative; margin-bottom: 18px; }
+.hero-wrap::after { /* Übergang zur Seite */
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 70px;
+  background: linear-gradient(transparent, var(--bg));
+  pointer-events: none;
+}
+
+.recipe-title { margin: 0 0 4px; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: .36px; }
+.recipe-sub { color: var(--label-2); font-size: 15px; letter-spacing: -.24px; margin: 0 0 18px; }
+
+/* Info-Leiste wie im App Store */
+.stats { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--card); border-radius: var(--radius); padding: 12px 0; }
+.stat { text-align: center; position: relative; padding: 0 6px; }
+.stat + .stat::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: .5px; background: var(--separator); }
+.stat-label { font-size: 11px; font-weight: 600; letter-spacing: .06px; color: var(--label-2); text-transform: uppercase; }
+.stat-value { font-family: var(--font-rounded); font-size: 22px; font-weight: 700; letter-spacing: 0; margin-top: 2px; }
+.stat-unit { font-size: 12px; color: var(--label-2); letter-spacing: 0; }
+
+/* iOS-Stepper */
+.stepper { display: inline-flex; align-items: center; height: 32px; border-radius: 9px; background: var(--fill); }
+.stepper button { width: 46px; height: 32px; display: grid; place-items: center; color: var(--label); }
+.stepper button:disabled { color: var(--label-3); }
+.stepper button + button { box-shadow: -.5px 0 0 var(--separator); }
+.stepper .icon svg { width: 18px; height: 18px; }
+
+.step { --inset: 54px; align-items: flex-start; padding-top: 13px; padding-bottom: 13px; }
+.num {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--tint-soft);
+  color: var(--tint);
+  font-family: var(--font-rounded);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.step-text { line-height: 1.42; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  background: var(--tint-soft);
+  color: var(--tint);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -.08px;
+}
+.badge .icon svg { width: 14px; height: 14px; }
+.notes { white-space: pre-wrap; line-height: 1.42; }
+
+/* ---------- Formular ---------- */
+
+.photo-pick {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--tint);
+  font-weight: 500;
+}
+.photo-pick > span { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; }
+.photo-pick .icon svg { width: 34px; height: 34px; }
+.photo-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.field-row > span:first-child { flex: 1; }
+.field-row input { text-align: right; width: 90px; flex: none; color: var(--label-2); }
+.field-row input:focus { color: var(--label); }
+.field-row .unit { color: var(--label-2); width: 34px; flex: none; }
+.title-input { font-size: 20px; font-weight: 600; letter-spacing: .38px; }
+
+.ing-edit { --inset: 52px; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+.ing-edit input { background: var(--fill); border-radius: 8px; padding: 7px 8px; }
+.ing-edit .in-amount { width: 58px; flex: none; text-align: right; }
+.ing-edit .in-unit { width: 58px; flex: none; }
+.ing-edit .in-name { flex: 1; min-width: 0; background: transparent; padding-left: 2px; }
+
+.remove-btn { color: var(--red); display: grid; place-items: center; width: 24px; height: 24px; flex: none; }
+.remove-btn .icon svg { width: 23px; height: 23px; }
+.add-icon { color: var(--green); }
+.add-icon svg { width: 23px; height: 23px; }
+
+.step-edit { --inset: 54px; flex-wrap: wrap; align-items: flex-start; padding-top: 12px; padding-bottom: 8px; }
+.step-edit textarea { flex: 1; min-width: 0; min-height: 44px; padding-top: 2px; }
+.step-tools { display: flex; align-items: center; gap: 4px; width: 100%; padding-left: 38px; color: var(--label-2); }
+.step-tools .spacer { flex: 1; }
+.timer-input { display: inline-flex; align-items: center; gap: 4px; background: var(--fill); border-radius: 999px; padding: 4px 12px 4px 8px; font-size: 15px; }
+.timer-input input { width: 34px; text-align: center; font-size: 16px; }
+.timer-input .icon svg { width: 17px; height: 17px; }
+.tool-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--label-2); }
+.tool-btn:active { background: var(--fill); }
+.tool-btn .icon svg { width: 18px; height: 18px; }
+
+.tag-add { display: flex; gap: 8px; margin-top: 10px; }
+.tag-add .search { flex: 1; }
+
+/* ---------- Hinweise & Leerzustände ---------- */
+
+.empty { text-align: center; padding: 70px 24px; color: var(--label-2); }
+.empty .icon svg { width: 54px; height: 54px; stroke-width: 1.5; color: var(--label-3); }
+.empty h3 { margin: 14px 0 4px; color: var(--label); font-size: 22px; font-weight: 700; letter-spacing: .35px; }
+.empty p { margin: 0 0 20px; font-size: 15px; }
+
+/* ---------- Kochmodus ---------- */
+
+.cook { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
+.cook-head { padding: calc(var(--sat) + 6px) max(14px, var(--sar)) 0 max(14px, var(--sal)); }
+.segments { display: flex; gap: 4px; margin: 0 2px 6px; }
+.segments > i { flex: 1; height: 3px; border-radius: 2px; background: var(--fill-2); transition: background-color .25s; }
+.segments > i.on { background: var(--tint); }
+.cook-bar { display: flex; align-items: center; gap: 10px; height: 52px; }
+.cook-bar .title { flex: 1; text-align: center; font-size: 15px; font-weight: 600; color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.24px; }
+.cook-bar .counter { width: 40px; text-align: right; font-family: var(--font-rounded); font-weight: 600; color: var(--label-2); font-size: 15px; letter-spacing: 0; }
+
+.live { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 4px 16px 0; }
+.live:empty { display: none; }
+.live-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px 0 10px;
+  border-radius: 17px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: inset 0 0 0 .5px var(--glass-edge), 0 2px 10px rgba(0, 0, 0, .08);
+  font-family: var(--font-rounded);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--tint);
+}
+.live-chip .icon svg { width: 16px; height: 16px; }
+.live-chip.done { background: var(--red); color: #fff; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .6; } }
+
+.cook-body { flex: 1; overflow-y: auto; width: 100%; max-width: 760px; margin: 0 auto; padding: 22px max(24px, var(--sar)) 24px max(24px, var(--sal)); }
+.cook-kicker { margin: 0 0 10px; color: var(--tint); font-size: 15px; font-weight: 600; letter-spacing: -.24px; }
+.cook-text { margin: 0; font-size: clamp(25px, 7vw, 34px); line-height: 1.3; font-weight: 600; letter-spacing: -.4px; }
+.cook-body h2 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: .36px; }
+.cook-ings .row { font-size: 19px; min-height: 54px; }
+.wake-note { display: flex; gap: 8px; align-items: center; justify-content: center; color: var(--label-2); font-size: 13px; margin-top: 16px; text-align: center; }
+
+/* Timer wie in der Uhr-App: Ring + runde Buttons */
+.clock { display: flex; flex-direction: column; align-items: center; margin-top: 28px; }
+.ring { position: relative; width: 210px; height: 210px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 7; }
+.ring .track { stroke: var(--fill-2); }
+.ring .bar { stroke: var(--tint); stroke-linecap: round; transition: stroke-dashoffset .5s linear; }
+.ring.done .bar { stroke: var(--red); }
+.ring-time { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-rounded); font-size: 50px; font-weight: 300; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.ring.done .ring-time { color: var(--red); font-weight: 500; }
+.clock-btns { display: flex; justify-content: space-between; width: 260px; margin-top: 18px; }
+.round-btn {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -.24px;
+  background: var(--fill);
+  color: var(--label);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--fill);  /* Doppelring wie in der Uhr-App */
+}
+.round-btn:disabled { opacity: .35; }
+.round-btn.go { background: rgba(52, 199, 89, .2); color: var(--green); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px rgba(52, 199, 89, .2); }
+.round-btn.pause { background: var(--tint-soft); color: var(--tint); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--tint-soft); }
+.round-btn.stop { background: rgba(255, 59, 48, .2); color: var(--red); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px rgba(255, 59, 48, .2); }
+
+.cook-nav { display: flex; gap: 10px; padding: 10px max(16px, var(--sar)) calc(10px + var(--sab)) max(16px, var(--sal)); }
+.cook-nav .btn { min-height: 56px; }
+.cook-nav .btn:first-child { flex: 1; }
+.cook-nav .btn:last-child { flex: 2; }
+
+/* ---------- Tab-Leiste (schwebendes Glas) ---------- */
+
+.tabbar {
+  position: fixed;
+  z-index: 30;
+  left: max(18px, var(--sal));
+  right: max(18px, var(--sar));
+  bottom: var(--tab-bottom);
+  max-width: 480px;
+  margin: 0 auto;
+  height: var(--tab-h);
+  display: flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: inset 0 0 0 .5px var(--glass-edge), var(--glass-shadow);
+}
+.tabbar a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: 999px;
+  color: var(--label);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1px;
+  transition: background-color .2s, color .2s;
+}
+.tabbar svg { width: 25px; height: 25px; }
+.tabbar a.active { color: var(--tint); background: var(--fill); }
+body.cooking .tabbar { display: none; }
+
+/* ---------- Sheets, Dialoge & Toast ---------- */
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, .3);
+  animation: fade .2s ease;
+}
+.sheet {
+  width: calc(100% - 16px);
+  max-width: 500px;
+  max-height: 86vh;
+  overflow: auto;
+  margin-bottom: max(8px, var(--sab));
+  padding: 8px 20px 20px;
+  border-radius: 34px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: inset 0 0 0 .5px var(--glass-edge), var(--glass-shadow);
+  animation: rise .32s cubic-bezier(.2, .9, .3, 1.05);
+}
+.sheet .grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--fill-2); margin: 0 auto 14px; }
+.sheet h3 { margin: 0 0 6px; font-size: 20px; font-weight: 700; letter-spacing: .38px; text-align: center; }
+.sheet p { white-space: pre-line; margin: 0 0 6px; color: var(--label-2); font-size: 15px; text-align: center; letter-spacing: -.24px; }
+.sheet textarea { background: var(--fill); border-radius: 12px; padding: 12px; margin-top: 10px; min-height: 160px; }
+.sheet-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { transform: translateY(60px); opacity: 0; } }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: calc(var(--sat) + 10px);
+  z-index: 200;
+  max-width: calc(100% - 40px);
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: inset 0 0 0 .5px var(--glass-edge), var(--glass-shadow);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.24px;
+  text-align: center;
+  transform: translate(-50%, -24px) scale(.9);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .35s cubic-bezier(.2, .9, .3, 1.2);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- Feinschliff ---------- */
+.ing-edit input { font-size: 16px; padding: 7px 6px; }
+.ing-edit .in-amount { width: 54px; }
+.ing-edit .in-unit { width: 70px; }
+.icon-tint { color: var(--tint); display: inline-flex; }
+.icon-tint svg { width: 23px; height: 23px; }
+.round-btn { width: 80px; height: 80px; font-size: 14px; }
+
+/* ---------- Teil 2: Planer & Einkaufsliste ---------- */
+
+.thumb-sm { width: 44px; height: 44px; flex: none; border-radius: 10px; object-fit: cover; display: grid; place-items: center; font-size: 22px; }
+
+.plan-entry { gap: 10px; padding-top: 10px; padding-bottom: 10px; }
+.plan-entry-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; text-align: left; }
+.plan-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
+.stepper.compact button { width: 34px; }
+.servings-value { min-width: 22px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.muted { color: var(--label-2); }
+
+.section-header .tool-btn { flex: none; }
+.link-btn { color: var(--tint); font-size: 15px; letter-spacing: -.24px; }
+
+.progress-line { height: 4px; border-radius: 2px; background: var(--fill-2); overflow: hidden; margin: 0 4px; }
+.progress-line > div { height: 100%; background: var(--green); border-radius: 2px; transition: width .3s; }
+
+.shop-item { padding-right: 6px; }
+.shop-item .ing-name { line-height: 1.25; }
+.shop-item .info-btn { color: var(--label-3); width: 32px; height: 32px; margin-left: -4px; }
+.shop-item.done .check { background: var(--green); }
+.muted-row .ing-name, .muted-row .ing-qty { color: var(--label-2); }
+
+.sheet-label { margin: 16px 4px 8px !important; text-align: left !important; font-size: 13px !important; font-weight: 600; text-transform: uppercase; letter-spacing: .1px !important; color: var(--label-2); }
+.sheet .group { background: var(--card); }
+.pills.center { justify-content: center; }
+.pick-list { max-height: 48vh; overflow-y: auto; }
+.date-row { margin-top: 14px; background: var(--card); border-radius: var(--radius); }
+.date-row input { width: auto; color: var(--tint); text-align: right; }
+
+/* Badge an der Tab-Leiste */
+.tabbar a { position: relative; }
+.tab-badge {
+  position: absolute;
+  top: 5px;
+  left: calc(50% + 6px);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  letter-spacing: 0;
+}
