@@ -17,6 +17,12 @@ import { fileURLToPath } from 'node:url';
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Auf GitHub Actions Fehler zusätzlich als Annotation ausgeben (in der Oberfläche sichtbar)
+const annotate = (title, message) => {
+  if (process.env.GITHUB_ACTIONS) console.log(`::error title=${title.replace(/[\n:,]/g, ' ')}::${String(message).replace(/%/g, '%25').replace(/\r?\n/g, '%0A')}`);
+};
+process.on('unhandledRejection', (err) => { annotate('E2E abgestürzt', err?.stack || err); console.error(err); process.exit(1); });
+
 /* ---------- Mini-Webserver ---------- */
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.md': 'text/markdown' };
@@ -40,7 +46,7 @@ const chromePath = process.env.CHROME_PATH || [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser',
 ].find(existsSync);
-if (!chromePath) { console.error('Chrome nicht gefunden – CHROME_PATH setzen.'); process.exit(2); }
+if (!chromePath) { annotate('E2E', 'Chrome nicht gefunden'); console.error('Chrome nicht gefunden – CHROME_PATH setzen.'); process.exit(2); }
 
 const profile = await mkdtemp(join(tmpdir(), 'kochbuch-e2e-'));
 const chrome = spawn(chromePath, [
@@ -145,6 +151,7 @@ async function scenario(name, fn) {
   } catch (err) {
     results.push({ name, ok: false, err });
     console.log(`✖ ${name}\n  ${err.message}`);
+    annotate(`E2E: ${name}`, err.message);
   }
 }
 function expect(actual, expected, what) {
