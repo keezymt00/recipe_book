@@ -24,7 +24,9 @@ export async function render(root) {
     const iso = await pickDay({ title: 'Neuer Kochtag', existingDays: days });
     if (!iso) return;
     await addDay(iso);
-    // Gleich das erste Rezept wählen lassen
+    // Gleich das erste Rezept wählen lassen – kurz warten, bis Sheet-Animation und
+    // ggf. der iOS-Datums-Picker vollständig geschlossen sind
+    await new Promise((r) => setTimeout(r, 350));
     const recipeId = await pickRecipe(recipes);
     if (recipeId) await addToDay(iso, recipeId, byId.get(recipeId).servings);
     rerender();

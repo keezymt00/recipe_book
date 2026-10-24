@@ -8,7 +8,7 @@
 //  - Offline oder Netz langsamer als 3 s (Supermarkt!): sofort aus dem Cache.
 // Bei neuen Dateien VERSION erhöhen und die Liste ASSETS ergänzen.
 
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = `kochbuch-${VERSION}`;
 
 // App-Hülle, die beim Installieren vorab gecacht wird (relative Pfade → funktioniert auch unter /repo-name/)

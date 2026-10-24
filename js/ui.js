@@ -141,10 +141,17 @@ export function toast(message, ms = 2200) {
  * Bottom-Sheet. actions: [{ label, value, kind: 'primary'|'tinted'|'danger'|'danger-fill' }] (leer → nur Inhalt)
  * value darf eine Funktion sein – sie läuft direkt im Klick (wichtig für navigator.share auf iOS).
  * Liefert den value der gewählten Aktion oder null (Tipp auf den Hintergrund).
+ * autofocus: erstes Eingabefeld fokussieren. Bewusst nur auf Wunsch – auf iOS öffnet ein
+ * fokussiertes Feld sofort Tastatur bzw. Datums-Picker und stört das Scrollen im Sheet.
  */
-export function modal({ title, body, actions = [] }) {
+export function modal({ title, body, actions = [], autofocus = false }) {
   return new Promise((resolve) => {
-    const close = (v) => { backdrop.remove(); resolve(v); };
+    const close = (v) => {
+      document.activeElement?.blur(); // Tastatur/Picker sicher schließen, bevor das nächste Sheet kommt
+      backdrop.remove();
+      if (!document.querySelector('.sheet-backdrop')) document.body.classList.remove('sheet-open');
+      resolve(v);
+    };
     const backdrop = h('div.sheet-backdrop', { onclick: (e) => { if (e.target === backdrop) close(null); } },
       h('div.sheet', { role: 'dialog', 'aria-modal': 'true' },
         h('div.grabber'),
@@ -157,7 +164,8 @@ export function modal({ title, body, actions = [] }) {
             onclick: () => close(typeof a.value === 'function' ? a.value() : a.value),
           }, a.label))) : null));
     document.body.append(backdrop);
-    backdrop.querySelector('textarea, input')?.focus();
+    document.body.classList.add('sheet-open'); // Seite dahinter nicht mitscrollen
+    if (autofocus) backdrop.querySelector('textarea, input')?.focus();
   });
 }
 

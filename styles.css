@@ -740,7 +740,18 @@ body.cooking .tabbar { display: none; }
 .sheet-label { margin: 16px 4px 8px !important; text-align: left !important; font-size: 13px !important; font-weight: 600; text-transform: uppercase; letter-spacing: .1px !important; color: var(--label-2); }
 .sheet .group { background: var(--card); }
 .pills.center { justify-content: center; }
-.pick-list { max-height: 48vh; overflow-y: auto; }
+.pick-list {
+  /* Einziger Scrollbereich im Sheet: Höhe begrenzen, Scrollen nicht an die Seite weitergeben */
+  max-height: 46vh;
+  max-height: 46dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+/* Solange ein Sheet offen ist, scrollt die Seite dahinter nicht mit */
+body.sheet-open { overflow: hidden; }
+.sheet { overscroll-behavior: contain; }
 .date-row { margin-top: 14px; background: var(--card); border-radius: var(--radius); }
 .date-row input { width: auto; color: var(--tint); text-align: right; }
 

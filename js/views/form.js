@@ -119,6 +119,7 @@ export async function render(root, [id]) {
       title: 'Zutaten einfügen',
       body: h('div', null, h('p', null, 'Eine Zutat pro Zeile – Menge und Einheit werden erkannt.'), ta),
       actions: [{ label: 'Übernehmen', value: true, kind: 'primary' }, { label: 'Abbrechen', value: false }],
+      autofocus: true, // hier soll man direkt lostippen können
     });
     if (!ok) return;
     ta.value.split('\n').map((l) => l.trim()).filter(Boolean)
