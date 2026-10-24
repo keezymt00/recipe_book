@@ -2,11 +2,11 @@
 
 import { getAll, getMeta, putMany } from '../db.js';
 import { getPantry } from '../shopping.js';
+import { APP_VERSION } from '../version.js';
 import { createBackupFile, shareFile, downloadFile, canShareFiles, importBackup } from '../backup.js';
 import { seedRecipes } from '../seed.js';
 import { h, icon, largeTitle, toast, modal } from '../ui.js';
 
-const APP_VERSION = '2.1';
 
 export async function render(root) {
   const recipes = await getAll('recipes');

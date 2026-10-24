@@ -37,6 +37,8 @@ manifest.json     PWA-Manifest (Name, Icons, Vollbild)
 sw.js             Service Worker (Offline-Cache, Network-first mit 3-s-Timeout)
 icons/            App-Icons (192, 512, apple-touch-icon 180)
 js/app.js         Einstieg: Router, Erststart, Service-Worker-Registrierung
+js/version.js     App-Version (bei jedem Release erhöhen)
+js/update.js      Update-Erkennung und Hinweis
 js/db.js          IndexedDB-Hülle + Datenmodell (normalizeRecipe)
 js/units.js       Einheiten, Umrechnung, Mengenformatierung
 js/aisles.js      Supermarktbereiche + automatische Zuordnung
@@ -84,9 +86,15 @@ Dann `http://localhost:8000` im Browser öffnen (am besten mit den DevTools in d
 4. Nach 1–2 Minuten ist die App erreichbar unter
    `https://DEIN-NAME.github.io/kochbuch/`
 
-**Updates:** Änderungen committen und pushen; GitHub Pages aktualisiert automatisch.
-Die App lädt online immer die neueste Version (Network-first). Wenn du neue Dateien hinzufügst,
-trage sie in `sw.js` in `ASSETS` ein und erhöhe `VERSION`, damit sie auch offline verfügbar sind.
+**Updates veröffentlichen:**
+1. In `js/version.js` die `APP_VERSION` erhöhen (z. B. `2.2` → `2.3`).
+2. Neue Dateien ggf. in `sw.js` unter `ASSETS` eintragen und `VERSION` erhöhen (für den Offline-Cache).
+3. Committen und pushen.
+
+Laufende Apps prüfen beim Start, beim Zurückkehren aus dem Hintergrund und alle 30 Minuten,
+ob es eine neue Version gibt, und zeigen dann oben „Neue Version verfügbar“ – ein Tipp lädt sie.
+Im Kochmodus wird der Hinweis ausgeblendet. Der Service Worker fragt bei jeder Datei per
+`no-cache` beim Server nach, daher kommen Updates ohne die übliche 10-Minuten-Verzögerung von GitHub Pages an.
 
 > Die Rezepte liegen nur auf deinem Gerät, nicht im Repo. Das Repo enthält nur den App-Code.
 

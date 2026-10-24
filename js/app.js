@@ -14,6 +14,7 @@ import * as planner from './views/planner.js';
 import * as shopping from './views/shopping.js';
 import * as pantry from './views/pantry.js';
 import { openCount, seedPantry } from './shopping.js';
+import { initUpdateCheck } from './update.js';
 
 /* ---------- Routen (Hash-basiert, funktioniert ohne Server-Konfiguration) ---------- */
 
@@ -126,6 +127,7 @@ async function init() {
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service Worker:', err));
   }
+  initUpdateCheck();
 }
 
 window.addEventListener('unhandledrejection', (e) => {
