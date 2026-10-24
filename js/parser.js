@@ -17,7 +17,9 @@ const TRAILING_AMOUNT_RE = new RegExp(String.raw`^(.+?)[,:]?\s+(${NUM})\s*([a-zA
 
 const ING_HEADER = /^(zutaten|ingredients|ingredientes|einkaufsliste|das brauchst du|du brauchst)\b/i;
 const STEP_HEADER = /^(zubereitung|anleitung|so geht'?s|schritte|arbeitsschritte|instructions|directions|method|preparation|elaboración|preparación)\b/i;
-const NOTE_HEADER = /^(tipps?|hinweise?|notizen|anmerkungen?|nährwerte|notes|tips)\b/i;
+// Nur als alleinstehende Überschrift ("Tipps", "Notizen:") – sonst würde eine Notiz wie
+// "Nährwerte geschätzt." als Überschrift verschluckt
+const NOTE_HEADER = /^(tipps?|tipps (?:&|und) tricks|hinweise?|notizen|anmerkungen?|nährwerte|notes|tips)\s*:?$/i;
 const TIME_LINE = /^(zubereitungszeit|kochzeit|backzeit|garzeit|gesamtzeit|arbeitszeit|vorbereitungszeit|zeit|dauer|total time|cook time|prep time|tiempo)\b\s*:?\s*(.*)$/i;
 const SERVINGS_RE = /(\d+)\s*(portionen|portion|personen|person|pers\.?|servings|raciones)\b/i;
 const TAGS_LINE = /^tags\s*:\s*(.+)$/i;

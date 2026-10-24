@@ -18,6 +18,14 @@ ohne Framework, ohne Backend. Alle Daten liegen lokal im Browser (IndexedDB).
 - **Rezept teilen** (Teilen-Symbol in der Rezeptansicht): als Text mit der eingestellten
   Portionszahl. Der Empfänger übernimmt es vollständig über „Rezept importieren“.
 
+## Claude-Skill: Rezepte aus Links, Fotos und Ideen
+
+`skills/kochbuch-rezept/` enthält einen Claude-Skill, der aus einem Link, Screenshot,
+Kochbuchfoto, Text oder einer Idee einen Rezepttext im Import-Format der App erzeugt
+(Deutsch, metrisch, saubere Zutatennamen für die Einkaufsliste, Timer pro Schritt).
+Installation: `skills/kochbuch-rezept.zip` auf claude.ai unter Settings → Capabilities → Skills
+hochladen. Nutzung: Codeblock kopieren → App → Rezept importieren → Einsetzen → Erkennen.
+
 ## Datensicherung
 
 **Automatisches Backup (Mehr → Automatisches Backup)** – einmalig einrichten:
